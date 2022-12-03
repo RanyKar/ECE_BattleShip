@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <Windows.h>
 
 #define SIZE 15      // Taille du tableau
 #define MAXSHIP 10   
@@ -62,6 +63,7 @@ int sameCoords(Coords coord1, Coords coord2);
 
 void attack(Player *attacker, Player *target, Coords coord);
 void IAattack(Player *attacker, Player *target, Coords coord);
+void reveal(Player *attacker, Player *target, Coords coord);
 int getCorespondingShipIndex(Player *target, Coords coord);
 int belongToShip(Ship *ship, Coords coord);
 
@@ -81,7 +83,7 @@ int main(){
         printf("It's your turn to play !\n");
         printf("Menu\n");               
         printf("1-Attack\n");
-        printf("2-\n");
+        printf("2-Reveal\n");
         printf("3-\n");
         printf("4-Exit\n");
         scanf("%d", &choice);
@@ -90,6 +92,9 @@ int main(){
                 attack(&player1, &computer, (Coords){5, 5});   // Appel de la fonction qui permet d'attaquer l'IA 
                 printf("Your turn is over. Your opponent is attacking !\n");
                 IAattack(&computer, &player1, (Coords){5, 5});
+                break;
+            case 2:
+                reveal(&player1, &computer, (Coords){5, 5});
                 break;
             default:     
                 break;
@@ -345,6 +350,71 @@ void attack(Player *attacker, Player *target, Coords coord){
         attacker->tab2[coord.row][coord.col] = 'E';
         printf("Missed\n");                                    // Raté
     }
+}
+
+void reveal(Player *attacker, Player *target, Coords coord){
+    printf("Your flash will reveal a 4*4 zone, enter the up-left coordinate of the square that you want to reveal.\n");
+    char row;
+    int effacer_c=0, effacer_d=0, effacer_b=0, effacer_dbd=0;
+    getchar();
+    scanf("%c %d", &row, &coord.col);
+    coord.row = row;
+
+     // Vérifie si la case donnée ne contient pas deja une lettre
+
+    if (attacker->tab2[coord.row - 'a'][coord.col] != 'E' && attacker->tab2[coord.row - 'a'][coord.col] != 'T')
+    {
+      attacker->tab2[coord.row - 'a'][coord.col]=target->tab1[coord.row - 'a'][coord.col];
+      effacer_c = 1;        // Boolean sur l'effacement
+    }
+
+    // Vérifie sa case de droite
+
+    if(attacker->tab2[coord.row - 'a'][coord.col+1] != 'E' && attacker->tab2[coord.row - 'a'][coord.col+1] != 'T')
+    {
+      attacker->tab2[coord.row - 'a'][coord.col+1]=target->tab1[coord.row - 'a'][coord.col+1];
+      effacer_d = 1;        // Boolean sur l'effacement
+    }
+
+    // Vérifie sa case du bas
+
+    if(attacker->tab2[coord.row+1 - 'a'][coord.col] != 'E' && attacker->tab2[coord.row+1- 'a'][coord.col] != 'T')
+    {
+      attacker->tab2[coord.row+1- 'a'][coord.col]=target->tab1[coord.row+1- 'a'][coord.col];
+      effacer_b = 1;        // Boolean sur l'effacement
+    }
+
+    // Vérifie sa case de diagonale bas droite
+
+    if(attacker->tab2[coord.row+1- 'a'][coord.col+1] != 'E' && attacker->tab2[coord.row+1- 'a'][coord.col+1] != 'T')
+    {
+      attacker->tab2[coord.row+1- 'a'][coord.col+1]=target->tab1[coord.row+1- 'a'][coord.col+1];
+      effacer_dbd = 1;        // Booleen sur l'effacement
+    }
+    display(attacker);
+    Sleep(3000);
+    system("cls");
+    if (effacer_c == 1)
+    {
+        attacker->tab2[coord.row- 'a'][coord.col] = ' ';
+    //    printf("fc %c\n", attacker->tab2[coord.row- 'a'][coord.col]);
+    }
+
+    if (effacer_d == 1)
+    {
+        attacker->tab2[coord.row- 'a'][coord.col+1] = ' ';
+    }
+
+    if (effacer_b == 1)
+    {
+        attacker->tab2[coord.row+1- 'a'][coord.col] = ' ';
+    }
+
+    if (effacer_dbd == 1)
+    {
+        attacker->tab2[coord.row+1- 'a'][coord.col+1] = ' ';
+    }
+      
 }
 
 // Fonction qui gère le tour de l'IA
