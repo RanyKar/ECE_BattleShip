@@ -1,9 +1,11 @@
-#include <stdlib.h>
+﻿#include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
 #include <stdbool.h>
 #include <Windows.h>
 #include <string.h>
+#include <dirent.h>
+#include <conio.h>
 
 #pragma warning(disable : 4996)
 
@@ -16,39 +18,25 @@ const char DESTOYER = 'D';
 const char SOUSMARIN = 'S';
 
 // Longueur de bateau
-const int L_PORTE_AVION = 7; 
+const int L_PORTE_AVION = 7;
 const int L_CROISEUR = 5;
 const int L_DESTOYER = 3;
 const int L_SOUSMARIN = 1;
 
 // Nombre maximum de bateau
-const int MAX_PORTE_AVION = 1; 
+const int MAX_PORTE_AVION = 1;
 const int MAX_CROISEUR = 2;
 const int MAX_DESTOYER = 3;
 const int MAX_SOUSMARIN = 4;
+
+const char* SAVE_DIR = "SavedGames";
+
 
 typedef struct {
     int row;      // Ligne
     int col;      // Colonne
 }Coords;
 
-//void saveCoord(Player player,FILE* fp)
-//{
-//    Coords position;
-//
-//    fprintf(fp, "row: %d\ncol: %d\n", position.row, position.col);
-//    //for (int i = 1; i <= 15; i++)
-//    //{
-//    //    position.row = i;
-//    //    fprintf(fp, "row: %d", position.row);
-//    //    fprintf(fp, "col: %d", position.col);
-//    //    for (int j = 1; j <= 15; j++)
-//    //    {
-//    //        position.col = j;
-//    //        fprintf(fp, "col: %d", position.col);
-//    //    }
-//    //}
-//}
 
 typedef struct {
     char type;          // Type du bateau
@@ -59,18 +47,6 @@ typedef struct {
     Coords coord;       // Coordonn�es du bateau
 }Ship;
 
-//void saveShip(Player player,FILE* fp)
-//{
-//    Player p;
-//    Ship s;
-//    int i = 0;
-//    // On écrit le nombre de bateau par joueur
-//    for (i = 0; i < p.nShip; i++)
-//    {
-//        fprintf(fp,"type = %c\nlength = %d\norientation = %c\nlife = %d\nstates =%d\n", s.type, s.length, s.orientation, s.life, s.life, s.states);
-//        saveCoord(player, fp);
-//    }
-//}
 
 typedef struct {
     Ship* ships;        // Bateau(x) du joueur
@@ -79,44 +55,13 @@ typedef struct {
     char** tab2;        // Grille 2 (celle de l'adversaire)
 }Player;
 
-//void savePlayer(Player player, FILE* fp)
-//{
-//    Player p;
-//    fprintf(fp, "nShip = %d", p.nShip);
-//    saveShip(player, fp);
-//}
+void Load(Player* player, Player* computer)
+{
 
-
-//void Save(Player player, Player computer)
-//{
-//    // Création du fichier
-//    FILE* fichier;
-//    char file_name[256];
-//    scanf("%s", file_name);
-//
-//    // Ouverture du fichier
-//    fichier = fopen(file_name, "w");
-//
-//    // Condition d'ouverture
-//    if (fichier == NULL)
-//    {
-//        printf("Impossible d'ouvrir le fichier de sauvegarde");
-//    }
-//    else
-//    {
-//        // On sauvegarde tout
-//        savePlayer(player, fichier);
-//        savePlayer(computer, fichier);
-//        /*ICI LA GRILLE A SAUVEGARDER*/
-//    }
-//
-//    fclose(fichier);
-//}
+}
 
 
 // Prototypes 
-
-
 void displayGap();
 void displayColumnIndex();
 void displayLine();
@@ -130,19 +75,24 @@ int getCorespondingShipIndex(Player* target, Coords coord);
 int belongToShip(Ship* ship, Coords coord);
 Player newPlayer();
 Ship newShip(char type);
-void attackSucceed(Ship *ship);
+void attackSucceed(Ship* ship);
 int placeShip(char** tab, Ship* ship, Coords coord, char orientation);
 void placePlayerShips(Player* player);
 char** newTab();
 int sameCoords(Coords coord1, Coords coord2);
 
-
 //
 void reveal(Player* attacker, Player* target, Coords coord);
-void move(Player *target, Coords coord);
-void step(Ship *ship, Player *player);
+void move(Player* target, Coords coord);
+void step(Ship* ship, Player* player, char dir);
+
 void IAattack(Player* attacker, Player* target, Coords coord);
 void play();
+void Save(Player player, Player computer);
+void savePlayer(Player p, FILE* fp);
+void saveShip(Ship ship, FILE* fp);
+void saveCoord(Coords coord, FILE* fp);
+void Load(Player* player, Player* computer);
 //
 
 //vide le buffer en lisant un à un les caractères présent dans celui-ci
@@ -182,7 +132,17 @@ int main() {
         }
         case 2:
         {
-
+            struct dirent* dir;
+            // opendir() renvoie un pointeur de type DIR. 
+            DIR* d = opendir(".");
+            if (d)
+            {
+                while ((dir = readdir(d)) != NULL)
+                {
+                    printf("%s\n", dir->d_name);
+                }
+                closedir(d);
+            }
         }break;
         case 4:
         {
@@ -193,23 +153,23 @@ int main() {
             break;
         }
         if (choicee == 3)
-        { 
-        FILE* fp = NULL;
-        int character;
-        fp = fopen("C://Users//araso//source//repos//Project_Battle//x64//Debug//README.txt", "r");
-        if (fp == NULL)
         {
-            printf("The file didn't opened\n");
-
-        }
-        else {
-            while ((character = fgetc(fp)) != EOF)
+            FILE* fp = NULL;
+            int character;
+            fp = fopen("C://Users//araso//source//repos//Project_Battle//x64//Debug//README.txt", "r");
+            if (fp == NULL)
             {
-                printf("%c", character);
-            }
-        }
+                printf("The file didn't opened\n");
 
-        fclose(fp);
+            }
+            else {
+                while ((character = fgetc(fp)) != EOF)
+                {
+                    printf("%c", character);
+                }
+            }
+
+            fclose(fp);
         }
         return 0;
     }
@@ -506,7 +466,7 @@ char** newTab() {
 
 // Fonction qui traite l'attaque d'un joueur sur une cible | 'a' vaut 97 transtyp� en int on initialisera � cette valeur par facilit�
 
-void attack(Player *attacker, Player *target, Coords coord){
+void attack(Player* attacker, Player* target, Coords coord) {
     printf("Enter attack's coordinates : ");
     char row;
     getchar();
@@ -514,7 +474,7 @@ void attack(Player *attacker, Player *target, Coords coord){
     coord.row = row - 'a';                 // Initialisation de la ligne des coordonnées
 
     printf("Attack at %c%d : ", 'a' + coord.row, coord.col);
-    if(target->tab1[coord.row][coord.col] != ' '){              // Si la case est non-vide
+    if (target->tab1[coord.row][coord.col] != ' ') {              // Si la case est non-vide
         attacker->tab2[coord.row][coord.col] = 'T';             // Touché
         int Index = getCorespondingShipIndex(target, coord);
         attackSucceed(&target->ships[Index]); // Sauvegarde de la perte de vie           
@@ -525,7 +485,7 @@ void attack(Player *attacker, Player *target, Coords coord){
             printf("The ship number %d is destroyed\n", Index);
         }
     }
-    else{
+    else {
         attacker->tab2[coord.row][coord.col] = 'E';
         printf("Missed\n");                                    // Raté
     }
@@ -549,9 +509,9 @@ int sameCoords(Coords coord1, Coords coord2) {
 
 //  Fonction qui renvoie l'index du bateau touch�
 
-int getCorespondingShipIndex(Player *target, Coords coord){
+int getCorespondingShipIndex(Player* target, Coords coord) {
     int index = 0;
-    while(!belongToShip(&target->ships[index], coord)){
+    while (!belongToShip(&target->ships[index], coord)) {
         if (index > 9)
         {
             printf("No ship here.\n");
@@ -569,12 +529,12 @@ int getCorespondingShipIndex(Player *target, Coords coord){
 
 // Fonction qui prend en compte la r�duction de vie du bateau et change l'�tat de la partie concern�e
 
-void attackSucceed(Ship *ship){
+void attackSucceed(Ship* ship) {
     // ship->states[shipPartIndex] = 0;
-    if(ship->life > 0){
+    if (ship->life > 0) {
         ship->life--;
     }
-    
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -583,25 +543,25 @@ void attackSucceed(Ship *ship){
 
 // Fonction qui permet de d�tecter si la case concern�e appartient � un bateau
 
-int belongToShip(Ship *ship, Coords coord){
+int belongToShip(Ship* ship, Coords coord) {
     // printf("type : %c, length : %d", ship->type, ship->length);
     // printf(", orientation : %c, coord : %c%d\n",ship->orientation, 'a' + ship->coord.row, ship->coord.col);
-        
+
     int belong = 0;                  // Booléen sur l'appartenance
 
     // Deux cas à traiter : vertical et horizontal
-    if(ship->orientation == 'v'){
-        for(int i=0;i<ship->length;i++){
-            if(sameCoords(coord, (Coords){ship->coord.row + i, ship->coord.col})){  
+    if (ship->orientation == 'v') {
+        for (int i = 0; i < ship->length; i++) {
+            if (sameCoords(coord, (Coords) { ship->coord.row + i, ship->coord.col })) {
                 // attackSucceed(ship, i);          
                 belong = 1;
             }
         }
     }
-    else if(ship->orientation == 'h'){
-        for(int i=0;i<ship->length;i++){
-            if(sameCoords(coord, (Coords){ship->coord.row, ship->coord.col + i})){
-              //  attackSucceed(ship, i);
+    else if (ship->orientation == 'h') {
+        for (int i = 0; i < ship->length; i++) {
+            if (sameCoords(coord, (Coords) { ship->coord.row, ship->coord.col + i })) {
+                //  attackSucceed(ship, i);
                 belong = 1;
             }
         }
@@ -615,7 +575,7 @@ int belongToShip(Ship *ship, Coords coord){
 
 
 
-void reveal(Player *attacker, Player *target, Coords coord){
+void reveal(Player* attacker, Player* target, Coords coord) {
 
     int effacer[4][4];
     char row;
@@ -632,13 +592,13 @@ void reveal(Player *attacker, Player *target, Coords coord){
         }
     } while (coord.row == 'o' || coord.row == 'n' || coord.row == 'm' || coord.col == 14 || coord.col == 13 || coord.col == 12);
 
-    for (int i=0; i<4; i++)
+    for (int i = 0; i < 4; i++)
     {
-        for (int j=0; j<4; j++)
+        for (int j = 0; j < 4; j++)
         {
             if (attacker->tab2[coord.row - 'a' + i][coord.col + j] != 'E' && attacker->tab2[coord.row - 'a' + i][coord.col + j] != 'T')
             {
-               attacker->tab2[coord.row - 'a' + i][coord.col + j]=target->tab1[coord.row - 'a' + i][coord.col + j];
+                attacker->tab2[coord.row - 'a' + i][coord.col + j] = target->tab1[coord.row - 'a' + i][coord.col + j];
                 effacer[i][j] = 1;        // Boolean sur l'effacement
             }
         }
@@ -648,55 +608,169 @@ void reveal(Player *attacker, Player *target, Coords coord){
     Sleep(3000);
     system("cls");
 
-    for (int i=0; i<4; i++)
+    for (int i = 0; i < 4; i++)
     {
-        for (int j=0; j<4; j++)
+        for (int j = 0; j < 4; j++)
         {
             if (effacer[i][j] == 1)
             {
-                attacker->tab2[coord.row- 'a' + i][coord.col + j] = ' ';
+                attacker->tab2[coord.row - 'a' + i][coord.col + j] = ' ';
             }
         }
     }
 }
 
+
 /////////////////////////////////////////////////////
 
+void step(Ship* ship, Player* player, char dir)
+{
+    char s[7];
+    if (ship->orientation == 'h')
+    {
+        if (dir == 'e' && ship->coord.col + ship->length - 1 == 14 )
+        {
+            printf("You can't move to this direction, you have reached the limit of the map !\n");
+        }
+        else if (dir == 'e')
+        {
+            if (player->tab1[ship->coord.row][ship->coord.col + ship->length] == 'P' || player->tab1[ship->coord.row][ship->coord.col + ship->length] == 'C' || player->tab1[ship->coord.row][ship->coord.col + ship->length] == 'D' || player->tab1[ship->coord.row][ship->coord.col + ship->length] == 'S')
+            {
+                printf("You can't move here, a ship is already there !\n");
+            }
+            else
+            {
+                for (int i = 0; i < ship->length; i++)
+                {
+                    s[i] = player->tab1[ship->coord.row][ship->coord.col + i];  // Tableau qui sauvegarde
+                    player->tab1[ship->coord.row][ship->coord.col + i + 1] = s[i]; // Décalage de 1
+                }
+                player->tab1[ship->coord.row][ship->coord.col] = ' '; // Suppression de la première case
+                ship->coord.col++; // Actualisation de la nouvelle coordonnée de construction (Avancer)
+            }
+        }
+        else if (dir == 'o' && ship->coord.col == 0 )
+        {
+            printf("You can't move to this direction, you have reached the limit of the map !\n");
+        }
+        else if (dir == 'o')
+        {
+            if (player->tab1[ship->coord.row][ship->coord.col - 1] == 'P' || player->tab1[ship->coord.row][ship->coord.col - 1] == 'C' || player->tab1[ship->coord.row][ship->coord.col - 1] == 'D' || player->tab1[ship->coord.row][ship->coord.col - 1] == 'S')
+            {
+                printf("You can't move here, a ship is already there !\n");
+            }
+            else
+            {
+                for (int i = 0; i < ship->length; i++)
+                {
+                    s[i] = player->tab1[ship->coord.row][ship->coord.col + i];  // Tableau qui sauvegarde
+                    player->tab1[ship->coord.row][ship->coord.col + i - 1] = s[i]; // Décalage de 1
+                }
+
+                player->tab1[ship->coord.row][ship->coord.col + ship->length - 1] = ' '; // Suppression de la dernière case
+                ship->coord.col--; // Actualisation de la nouvelle coordonnée de construction (Reculer)
+            }
+
+        }
+        else
+        {
+            printf("You have chosen the wrong direction !\n");
+        }
+    }
+
+    else if (ship->orientation == 'v')
+    {
+        if (dir == 's' && 'a' + ship->coord.row + ship->length - 1 == 'o' )
+        {
+            printf("You can't move to this direction, you have reached the limit of the map !\n");
+        }
+        else if (dir == 's')
+        {
+            if (player->tab1[ship->coord.row + ship->length][ship->coord.col] == 'P' || player->tab1[ship->coord.row + ship->length][ship->coord.col] == 'C' || player->tab1[ship->coord.row + ship->length][ship->coord.col] == 'D' || player->tab1[ship->coord.row + ship->length][ship->coord.col] == 'S')
+            {
+                printf("You can't move here, a ship is already there !\n");
+            }
+            else
+            {
+                for (int i = 0; i < ship->length; i++)
+                {
+                    s[i] = player->tab1[ship->coord.row + i][ship->coord.col];  // Tableau qui sauvegarde
+                    player->tab1[ship->coord.row + i + 1][ship->coord.col] = s[i]; // Décalage de 1
+                }
+
+                player->tab1[ship->coord.row][ship->coord.col] = ' '; // Suppression de la première case
+                ship->coord.row++; // Actualisation de la nouvelle coordonnée de construction (Descendre)
+            }
+
+        }
+        else if (dir == 'n' && 'a' + ship->coord.row == 'a' )
+        {
+            printf("You can't move to this direction, you have reached the limit of the map !\n");
+        }
+        else if (dir == 'n')
+        {
+            if (player->tab1[ship->coord.row - 1][ship->coord.col] == 'P' || player->tab1[ship->coord.row - 1][ship->coord.col] == 'C' || player->tab1[ship->coord.row - 1][ship->coord.col] == 'D' || player->tab1[ship->coord.row - 1][ship->coord.col] == 'S')
+            {
+                printf("You can't move here, a ship is already there !\n");
+            }
+            else
+            {
+                for (int i = 0; i < ship->length; i++)
+                {
+                    s[i] = player->tab1[ship->coord.row + i][ship->coord.col];  // Tableau qui sauvegarde
+                    player->tab1[ship->coord.row + i - 1][ship->coord.col] = s[i]; // Décalage de 1
+                }
+
+                player->tab1[ship->coord.row + ship->length - 1][ship->coord.col] = ' '; // Suppression de la dernière case
+                ship->coord.row--; // Actualisation de la nouvelle coordonnée de construction (Monter)
+            }
+
+        }
+        else
+        {
+            printf("You have chosen the wrong direction !\n");
+        }
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
 void move(Player *target, Coords coord){
+    char d = 'x';
+    coord.row = 'x';
+    coord.col = -1;
+    while (d != 'n' && d != 's' && d != 'e' && d != 'o'  )
+    {
+        printf("Type the letter of the direction.\n");
+        scanf("%s", &d);
+        if (d != 'n' && d != 's' && d != 'e' && d != 'o' )
+        {
+            printf("Wrong direction.\n");
+        }
+    }
     int Index = 10;
-    while (Index > 9){
-        printf("Type one of the coordinates of the ship that you want to move one step forward.\n");
+    while (Index > 9 || (coord.row > 'a' + 'o' || coord.row < 'a' + 'a') && (coord.col < 0 || coord.col > 14) ){
+        printf("Type one of the coordinates of the ship that you want to move.\n");
         char row;
         getchar();
         scanf("%c %d", &row, &coord.col);
         coord.row = row - 'a';
+        if ( (coord.row > 'a' + 'o' || coord.row < 'a' + 'a') && (coord.col < 0 || coord.col > 14) )
+        {
+            printf("Wrong coordinates.\n");
+        }
         Index = getCorespondingShipIndex(target, coord);
     }
     
-    step(&target->ships[Index], target);
+    step(&target->ships[Index], target, d);
 }
 
-/////////////////////////////////////////////////////
 
-void step(Ship *ship, Player *player)
-{
-
-    if (ship->orientation == 'h')
-    {
-        player->tab1[ship->coord.row][ship->coord.col] = ' ';
-       //  printf("%c\n", player->tab1[ship->coord.row][ship->coord.col]);
-        player->tab1[ship->coord.row][ship->coord.col + ship->length] = ship->type;
-        ship->coord.col++;                                  // On incremente la colonne de construction du bateau
-    }
-    if (ship->orientation == 'v')
-    {
-        player->tab1[ship->coord.row][ship->coord.col] = ' ';
-        player->tab1[ship->coord.row + ship->length][ship->coord.col] = ship->type;
-        ship->coord.row++;                               // On incremente la ligne de construction du bateau
-    }
-}
-
-/////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -704,14 +778,14 @@ void step(Ship *ship, Player *player)
 
 // Fonction qui g�re le tour de l'IA
 
-void IAattack(Player *attacker, Player *target, Coords coord){
+void IAattack(Player* attacker, Player* target, Coords coord) {
 
-char row = rand() % SIZE;
-coord.col = rand() % SIZE;
-coord.row = row;
+    char row = rand() % SIZE;
+    coord.col = rand() % SIZE;
+    coord.row = row;
 
-printf("Your opponent attacks at %c%d : ", 'a' + coord.row, coord.col);
-if(target->tab1[coord.row][coord.col] != ' '){              // Si la case est non-vide
+    printf("Your opponent attacks at %c%d : ", 'a' + coord.row, coord.col);
+    if (target->tab1[coord.row][coord.col] != ' ') {              // Si la case est non-vide
         target->tab1[coord.row][coord.col] = 'T';             // Touché
         printf("Touched\n");
         int Index = getCorespondingShipIndex(target, coord);
@@ -722,36 +796,56 @@ if(target->tab1[coord.row][coord.col] != ' '){              // Si la case est no
             printf("Your ship number %d is destroyed\n", Index);
         }
     }
-else{
+    else {
         target->tab1[coord.row][coord.col] = 'E';
         printf("Missed\n");                                    // Raté
     }
 
 }
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-
 void play()
 {
-    srand(time(NULL));                  // Initialisation du temps
-    Player player1 = newPlayer();       // Création du joueur humain (jeu solo)
-    Player computer = newPlayer();      // Création de l'IA en tant que joueur
 
-    placePlayerShips(&player1);         // Appel de la fonction qui place les bateaux du joueur humain
-    placePlayerShips(&computer);        // Appel de la fonction qui place les bateaux de l'IA
+    Player p;
+    Player player1 = newPlayer();                                                   // Création du joueur humain (jeu solo)
+    Player computer = newPlayer();                                                  // Création de l'IA en tant que joueur
 
+    placePlayerShips(&player1);                                                     // Appel de la fonction qui place les bateaux du joueur humain
+    placePlayerShips(&computer);                                                    // Appel de la fonction qui place les bateaux de l'IA
+    
+    char ch;
     int choice;
-    bool tourIA = false;                // L'humain commnce au début
-    int flares = 0;
+    bool tourIA = false;                                                            // L'humain commnce au début
+    int flares = 0;                                                                  // On a le droit à 4 flares
 
     do {
-        Sleep(1000);
-        // system("cls");                  
-        display(&player1);              // Afficher les bateaux du joueur humain (ceux de l'IA sont cach�s)
+        Sleep(1500);
+        system("cls");
+        display(&player1);                                                          // Afficher les bateaux du joueur humain (ceux de l'IA sont cach�s)
         if (tourIA == false)
-        {
+        {   
+            printf("\nAppuez sur n'importe quelle touche pour ouvrir le menu\n");
+            if (!kbhit())
+            {
+                ch =  getch();
+                if ((int) ch == 118)
+                {
+                    printf("Cheat mode : ON\n");
+                    for (int i =0; i < SIZE; i++)
+                    {
+                        for (int j = 0; j < SIZE; j++)
+                        {
+                            player1.tab2[i][j] = computer.tab1[i][j];
+                        }
+                    }   
+                }
+            }
+
             printf("It's your turn to play !\n\n\n");
             printf("\t\t------- Menu -------\n\n\n");
             printf("\t\t-1- Missile\n");
@@ -764,36 +858,181 @@ void play()
 
             switch (choice) {
             case 1:
-                attack(&player1, &computer, (Coords) { 5, 5 });   // Appel de la fonction qui permet d'attaquer l'IA 
+            {
+                attack(&player1, &computer, (Coords) { 5, 5 });               // Appel de la fonction qui permet d'attaquer l'IA 
                 printf("Your turn is over. Your opponent is attacking !\n");
-                break;
+                tourIA = true;                                                // C'est au tour de l'IA une fois l'attaque terminée
+            }break;
             case 2:
-                move(&player1, (Coords){5, 5});
-                break;
+            {
+                move(&player1, (Coords) { 5, 5 });                           // Appel de la fonction qui permet de faire bouger un bateau
+                tourIA = true;                                               // C'est au tour de l'IA une fois l'attaque terminée
+            }break;
             case 3:
+            {
+                // RAPPEL ON A LE DROIT QU'A 4 FLARES
                 if (flares == 4)
-                {   
+                {
                     printf("You don't have any more flares !\n");
                     break;
                 }
-                reveal(&player1, &computer, (Coords){5, 5});
+                reveal(&player1, &computer, (Coords) { 5, 5 });             // Appel de la fonction qui révèle une partie des cases     
                 flares++;
-                break;
+                tourIA = true;                                             // C'est au tour de l'IA une fois l'attaque terminée
+            }
+            break;
             case 4:
-                // Sauvegarde ici
-                break;
+            {
+
+                Save(player1, computer);                                   // Appel de la fonction qui sauvegarde la partie en cours
+            }break;
             case 5:
-                exit(0);
+                exit(0);                                                   // Arrête le programme
                 break;
             default:
                 break;
             }
-            tourIA = true;
         }
         else
         {
-            IAattack(&computer, &player1, (Coords) { 5, 5 });
-            tourIA = false; // Tour de l'humain
+            IAattack(&computer, &player1, (Coords) { 5, 5 });              // Quand TourIA == true, on appelle la fonction IA Attack
+            tourIA = false;                                               // Tour de l'humain
         }
-    } while (choice != 5);    // Blindage du choix du menu
+    } while (choice != 5);                                                // Blindage du choix du menu
 }
+
+
+//===============================//
+//=         SAUVEGARDE          =//
+//===============================//
+
+
+// Fonction qui sauvegarde les coordonées d'un bateaux
+
+void saveCoord(Coords coord, FILE* fp)
+{
+    // Ecriture dans le fichier texte des coordonnée
+    fprintf(fp, "{\n");
+    fprintf(fp, "row=%d\ncol=%d\n", coord.row, coord.col);
+    fprintf(fp, "}\n");
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+// Fonction qui sauvegarde les attributs de la class Ship comprenant les coordonnées de chaque ship
+
+void saveShip(Ship ship, FILE* fp)
+{
+    fprintf(fp, "{\n");
+    fprintf(fp, "type=%c\nlength=%d\norientation=%c\nlife=%d\n", ship.type, ship.length, ship.orientation, ship.life);
+    // 1 n bonne état sinon 0 : détruit
+    fprintf(fp, "states=[");
+    fprintf(fp, "%d", ship.states[0]);
+    for (int j = 1; j < ship.length; ++j)
+        fprintf(fp, ",%d", ship.states[j]);
+    fprintf(fp, "]\n");
+    //
+
+    fprintf(fp, "coord=\n");
+    saveCoord(ship.coord, fp);
+    fprintf(fp, "}\n");
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+// Fonction qui sauvegarde cete fois les atributs de la class Player comprenant les infos de chaqu ship
+
+void savePlayer(Player p, FILE* fp)
+{
+    fprintf(fp, "{\n");
+    fprintf(fp, "nShip=%d\n", p.nShip);
+    fprintf(fp, "ships=[\n");
+    // Boucle pour récupérer les infos sur chaque Ship du joueur
+    saveShip(p.ships[0], fp);
+    for (int i = 1; i < p.nShip; ++i)
+    {
+        fprintf(fp, ",\n");
+        saveShip(p.ships[i], fp);
+    }
+    fprintf(fp, "]\n");
+    // La grille 1 est enregistré sur une seule ligne
+    fprintf(fp, "tab1=[");
+    fprintf(fp, "%d", p.tab1[0][0]);
+    for (int i = 1; i < 15; ++i)
+    {
+        for (int j = 1; j < 15; ++j)
+        {
+            fprintf(fp, ",%d", p.tab1[i][j]);
+        }
+    }
+    fprintf(fp, "]\n");
+    //
+    // La grille 2 est enregistré sur une seule ligne 
+    fprintf(fp, "tab2=[");
+    fprintf(fp, "%d", p.tab2[0][0]);
+    for (int i = 1; i < 15; ++i)
+    {
+        for (int j = 1; j < 15; ++j)
+        {
+            fprintf(fp, ",%d", p.tab2[i][j]);
+        }
+    }
+    fprintf(fp, "]\n");
+    fprintf(fp, "}\n");
+    //
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+// Fonction qui sauvegarde cete fois les informations completes sur la partie pour chaque joueur
+void Save(Player player, Player computer)
+{
+    char file_name[256];
+    printf("Donnez un nom a votre fichier de sauvegarde: ");
+    int f = scanf("%s", file_name);
+
+    // Ouverture du fichier
+    FILE* fichier = fopen(file_name, "w");
+
+    // Condition d'ouverture
+    if (fichier == NULL)
+    {
+        printf("Impossible d'ouvrir le fichier de sauvegarde");
+    }
+    else
+    {
+        // On sauvegarde tout
+        //if (IsTourIA == true)
+        //    fprintf(fichier, "TourIA=1\n");
+        //else
+        //{
+        //    fprintf(fichier, "TourIA=0\n");
+        //}
+        savePlayer(player, fichier);
+        savePlayer(computer, fichier);
+        fclose(fichier);
+    }
+}
+
+
+//===============================//
+//=        RESTAURATION         =//
+//===============================//
+
+
+
+
+
+
