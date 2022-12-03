@@ -61,6 +61,7 @@ char **newTab();
 int sameCoords(Coords coord1, Coords coord2);
 
 void attack(Player *attacker, Player *target, Coords coord);
+void IAattack(Player *attacker, Player *target, Coords coord);
 int getCorespondingShipIndex(Player *target, Coords coord);
 int belongToShip(Ship *ship, Coords coord);
 
@@ -76,8 +77,8 @@ int main(){
 
     int choice;
     do{
-        system("clear");                // Effacer la console
         display(&player1);              // Afficher les bateaux du joueur humain (ceux de l'IA sont cachés)
+        printf("It's your turn to play !\n");
         printf("Menu\n");               
         printf("1-Attack\n");
         printf("2-\n");
@@ -87,6 +88,8 @@ int main(){
         switch(choice){
             case 1:
                 attack(&player1, &computer, (Coords){5, 5});   // Appel de la fonction qui permet d'attaquer l'IA 
+                printf("Your turn is over. Your opponent is attacking !\n");
+                IAattack(&computer, &player1, (Coords){5, 5});
                 break;
             default:     
                 break;
@@ -323,30 +326,56 @@ char **newTab(){
 }
 
 
-// Fonction qui traite l'attaque d'un joueur sur une cible  // A FAIRE
+// Fonction qui traite l'attaque d'un joueur sur une cible | 'a' vaut 97 transtypé en int on initialisera à cette valeur par facilité
 
 void attack(Player *attacker, Player *target, Coords coord){
     printf("Enter attack's coordinates : ");
     char row;
     getchar();
     scanf("%c %d", &row, &coord.col);
-    coord.row = row - 'a';
+    coord.row = row - 'a';                 // Initialisation de la ligne des coordonnées
 
     printf("Attack at %c%d : ", 'a' + coord.row, coord.col);
-    if(target->tab1[coord.row][coord.col] != ' '){
-        attacker->tab2[coord.row][coord.col] = 'T';
+    if(target->tab1[coord.row][coord.col] != ' '){              // Si la case est non-vide
+        attacker->tab2[coord.row][coord.col] = 'T';             // Touché
         printf("Touched\n");
-        printf("%d\n", getCorespondingShipIndex(target, coord));
+        printf("The ship number %d is under attack !\n", getCorespondingShipIndex(target, coord));
     }
     else{
         attacker->tab2[coord.row][coord.col] = 'E';
-        printf("Missed\n");
+        printf("Missed\n");                                    // Raté
     }
 }
+
+// Fonction qui gère le tour de l'IA
+
+void IAattack(Player *attacker, Player *target, Coords coord){
+char row = rand() % SIZE;
+coord.col = rand() % SIZE;
+coord.row = row;
+
+printf("Your opponent attacks at %c%d : ", 'a' + coord.row, coord.col);
+if(target->tab1[coord.row][coord.col] != ' '){              // Si la case est non-vide
+        target->tab1[coord.row][coord.col] = 'T';             // Touché
+        printf("Touched\n");
+        printf("%d\n", getCorespondingShipIndex(target, coord));
+    }
+else{
+        target->tab1[coord.row][coord.col] = 'E';
+        printf("Missed\n");                                    // Raté
+    }
+
+}
+
+// Fonction qui compare les coordonnées entrées en paramètre et renvoie le booléen correspondant
+
 int sameCoords(Coords coord1, Coords coord2){
     // printf("%c%d %c%d\n", 'a' + coord1.row, coord1.col, 'a' + coord2.row, coord2.col);
     return (coord1.col == coord2.col && coord1.row == coord2.row);
 }
+
+//  Fonction qui renvoie l'index du bateau touché
+
 int getCorespondingShipIndex(Player *target, Coords coord){
     int index = 0;
     while(!belongToShip(&target->ships[index], coord)){
@@ -354,6 +383,8 @@ int getCorespondingShipIndex(Player *target, Coords coord){
     }
     return index;
 }
+
+// Fonction qui prend en compte la réduction de vie du bateau et change l'état de la partie concernée
 
 void attackSucceed(Ship *ship, int shipPartIndex){
     ship->states[shipPartIndex] = 0;
@@ -363,15 +394,20 @@ void attackSucceed(Ship *ship, int shipPartIndex){
     
 }
 
+// Fonction qui permet de détecter si la case concernée appartient à un bateau
+
 int belongToShip(Ship *ship, Coords coord){
     // printf("type : %c, length : %d", ship->type, ship->length);
     // printf(", orientation : %c, coord : %c%d\n",ship->orientation, 'a' + ship->coord.row, ship->coord.col);
         
-    int belong = 0;
+    int belong = 0;                  // Booléen sur l'appartenance
+
+    // Deux cas à traiter : vertical et horizontal
+
     if(ship->orientation == 'v'){
         for(int i=0;i<ship->length;i++){
-            if(sameCoords(coord, (Coords){ship->coord.row + i, ship->coord.col})){
-                attackSucceed(ship, i);
+            if(sameCoords(coord, (Coords){ship->coord.row + i, ship->coord.col})){  
+                attackSucceed(ship, i);          // Sauvegarde de la perte de vie et l'état de la partie du bateau
                 belong = 1;
             }
         }
